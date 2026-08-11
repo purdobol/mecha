@@ -2,12 +2,6 @@
   <img src="assets/logo.png" width="180">
 </p>
 
-<h1 align="center">Personal Dotfiles</h1>
-
-<p align="center">
-  Omarchy × Doom Emacs
-</p>
-
 
 # Personal Dotfiles
 
