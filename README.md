@@ -80,7 +80,7 @@ The Emacs side is based on the `sanityinc-tomorrow` theme, modified to fit the O
 
 The workflow is demonstrated below:
 
-<video src="VIDEO_URL_THEME_SWITCHING" width="800" controls></video>
+<video src="https://github.com/user-attachments/assets/c021e920-8b89-4b5a-a2fa-b955a207d071" width="800" controls></video>
 
 ---
 
@@ -117,7 +117,7 @@ The result is a system-wide interface for **finding and acting on things**, rega
 
 > **One interface for finding things, regardless of where they live.**
 
-<video src="VIDEO_URL_OMNI_LOCAL" width="800" controls></video>
+<video src="https://github.com/user-attachments/assets/a45203bd-db04-43ca-8882-3e66a49e2f6a" width="800" controls></video>
 
 ---
 
@@ -137,7 +137,7 @@ The integration includes commands such as:
 
 The idea is to make Omarchy functionality feel like part of the same interface rather than requiring a separate menu.
 
-<video src="VIDEO_URL_OMNI_OMARCHY" width="800" controls></video>
+<video src="https://github.com/user-attachments/assets/f55f3a0a-7a61-43ac-94c0-1afb4ebea28e" width="800" controls></video>
 
 ---
 
@@ -163,7 +163,7 @@ The capture workflows can be accessed directly through the global Omarchy keybin
 
 The demo below shows several of these workflows, including task and note capture, clipboard-based context capture, and fetching and converting a web page into Org.
 
-<video src="VIDEO_URL_ORG_CAPTURE" width="800" controls></video>
+<video src="https://github.com/user-attachments/assets/98e4212b-ade6-4f73-b54b-38b5924aaaed" width="800" controls></video>
 
 ---
 
@@ -230,7 +230,7 @@ The result is effectively an inbox for information captured throughout the syste
 
 The demo below showcases switching between sources, reviewing captured items, filtering, marking entries, and deleting items.
 
-<video src="VIDEO_URL_ORG_BROWSER" width="800" controls></video>
+<video src="https://github.com/user-attachments/assets/370dabfe-f699-4c2d-b6d0-1818cac6eac4" width="800" controls></video>
 
 ---
 
