@@ -1,3 +1,14 @@
+<p align="center">
+  <img src="assets/logo.png" width="180">
+</p>
+
+<h1 align="center">Personal Dotfiles</h1>
+
+<p align="center">
+  Omarchy × Doom Emacs
+</p>
+
+
 # Personal Dotfiles
 
 This README serves primarily as a reference for the configuration: what it is built on, how the different pieces fit together, and the ideas behind the workflows.
@@ -9,8 +20,8 @@ This README serves primarily as a reference for the configuration: what it is bu
 Clone the repository:
 
 ```bash
-git clone <REPOSITORY_URL>
-cd <REPOSITORY_DIRECTORY>
+git clone https://github.com/purdobol/mecha
+cd mecha
 ```
 
 Then run the installation script:
