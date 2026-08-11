@@ -76,8 +76,6 @@ Omarchy and Doom Emacs share the same theme integration.
 
 Changing the active Omarchy theme automatically changes the corresponding Emacs theme, keeping the desktop and Emacs visually synchronized.
 
-The Emacs side is based on the `sanityinc-tomorrow` theme, modified to fit the Omarchy environment.
-
 The workflow is demonstrated below:
 
 <video src="https://github.com/user-attachments/assets/c021e920-8b89-4b5a-a2fa-b955a207d071" width="800" controls></video>
