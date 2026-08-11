@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Synchronize Emacs with the newly selected Omarchy theme.
+#
+# Omarchy passes the theme name as $1.
+
+if command -v emacsclient >/dev/null 2>&1; then
+    emacsclient --eval '(omarchy-emacs-reload)' >/dev/null 2>&1 || true
+fi
