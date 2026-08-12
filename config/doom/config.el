@@ -35,15 +35,25 @@
 (load! "lisp/mechanoonna-tomorrow-theme")
 
 
+;; (defun my/omarchy-theme ()
+;;   "Return the current Omarchy theme name."
+;;   (let ((file (expand-file-name
+;;                "~/.config/omarchy/current/theme.name")))
+;;     (when (file-readable-p file)
+;;       (string-trim
+;;        (with-temp-buffer
+;;          (insert-file-contents file)
+;;          (buffer-string))))))
+
 (defun my/omarchy-theme ()
-  "Return the current Omarchy theme name."
-  (let ((file (expand-file-name
-               "~/.config/omarchy/current/theme.name")))
-    (when (file-readable-p file)
-      (string-trim
-       (with-temp-buffer
-         (insert-file-contents file)
-         (buffer-string))))))
+  "Return the current Omarchy theme name, normalized to lowercase."
+  (when-let ((theme (executable-find "omarchy-theme-current")))
+    (let ((name (string-trim
+                 (with-temp-buffer
+                   (call-process theme nil t nil)
+                   (buffer-string)))))
+      (unless (string-empty-p name)
+        (downcase name)))))
 
 
 (defun my/omarchy-emacs-theme ()
@@ -538,8 +548,8 @@
 ;; GPTel
 ;; ============================================================
 
-(after! gptel
-  (load! "lisp/gptel-setup"))
+;; (after! gptel
+;;   (load! "lisp/gptel-setup"))
 
 
 ;; ============================================================

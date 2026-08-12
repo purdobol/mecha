@@ -4,6 +4,8 @@ workspace=$(hyprctl activeworkspace -j | jq -r '.id')
 
 omarchy-launch-browser --private &
 
+addr=""
+
 for _ in {1..40}; do
     sleep 0.05
 
@@ -15,10 +17,15 @@ for _ in {1..40}; do
         | .[-1].address
     ')
 
-    [[ -n "$addr" && "$addr" != "null" ]] && break
+    if [[ -n "$addr" && "$addr" != "null" ]]; then
+        break
+    fi
 done
 
 if [[ -n "$addr" && "$addr" != "null" ]]; then
-    hyprctl dispatch movetoworkspacesilent "$workspace,address:$addr"
-    hyprctl dispatch focuswindow "address:$addr"
+    # Move the private browser window silently to the workspace
+    hyprctl dispatch "hl.dsp.window.move({ workspace = \"$workspace\", follow = false, window = \"address:$addr\" })"
+
+    # Focus the private browser window
+    hyprctl dispatch "hl.dsp.focus({ window = \"address:$addr\" })"
 fi

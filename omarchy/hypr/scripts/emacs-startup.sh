@@ -2,6 +2,6 @@
 
 sleep 3
 
-hyprctl dispatch workspace 9
+hyprctl dispatch "hl.dsp.focus({ workspace = \"9\" })"
 
 emacs
