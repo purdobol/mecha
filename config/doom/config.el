@@ -480,6 +480,20 @@
   (load! "lisp/elfeed-setup.el"))
 
 
+
+;; ============================================================
+;; Avy
+;; ============================================================
+
+(use-package! avy
+  :commands (avy-goto-char-timer avy-isearch)
+  :init
+  (map! "C-." #'avy-goto-char-timer)
+  :config
+  (load! "lisp/avy-setup.el"))
+
+
+
 ;; ============================================================
 ;; Eshell improvements
 ;; ============================================================
@@ -551,6 +565,134 @@
 ;; (after! gptel
 ;;   (load! "lisp/gptel-setup"))
 
+
+
+;; ============================================================
+;; Devil mode
+;; ============================================================
+
+(use-package! devil
+  :config
+  (global-devil-mode 1))
+
+
+;; ============================================================
+;; Devil custom repeatable key groups
+;; ============================================================
+
+(after! devil
+
+  ;; ------------------------------------------------------------
+  ;; Remove standalone C-s group.
+  ;; We'll replace it with a C-s / C-r group below.
+  ;; ------------------------------------------------------------
+
+  (setq devil-repeatable-keys
+        (seq-remove
+         (lambda (group)
+           (equal group '("%k s")))
+         devil-repeatable-keys))
+
+
+  ;; ------------------------------------------------------------
+  ;; Extend Devil's existing marking group
+  ;; ------------------------------------------------------------
+  ;;
+  ;; ,m@    = M-@     = mark-word
+  ;; ,mh     = M-h     = mark-paragraph
+  ;; ,mmSPC  = C-M-SPC = mark-sexp
+  ;;
+
+  (setq devil-repeatable-keys
+        (mapcar
+         (lambda (group)
+           (if (equal group '("%k m @" "%k m h"))
+               '("%k m @" "%k m h" "%k m m SPC")
+             group))
+         devil-repeatable-keys))
+
+
+  ;; ------------------------------------------------------------
+  ;; Add custom groups
+  ;; ------------------------------------------------------------
+
+  (setq devil-repeatable-keys
+        (append
+         devil-repeatable-keys
+
+         '(
+           ;; ------------------------------------------------------------
+           ;; Structural navigation / editing
+           ;; ------------------------------------------------------------
+           ;;
+           ;; Definition-level:
+           ;;
+           ;; ,mma    = C-M-a   = beginning-of-defun
+           ;; ,mme    = C-M-e   = end-of-defun
+           ;; ,mmh    = C-M-h   = mark-defun
+           ;;
+           ;; S-expression:
+           ;;
+           ;; ,mmb    = C-M-b   = backward-sexp
+           ;; ,mmf    = C-M-f   = forward-sexp
+           ;;
+           ;; List structure:
+           ;;
+           ;; ,mmd    = C-M-d   = down-list
+           ;; ,mmu    = C-M-u   = backward-up-list
+           ;; ,mmn    = C-M-n   = forward-list
+           ;; ,mmp    = C-M-p   = backward-list
+           ;;
+           ;; Editing:
+           ;;
+           ;; ,mmk    = C-M-k   = kill-sexp
+           ;; ,mmDEL  = C-M-DEL = backward-kill-sexp
+           ;; ,mmSPC  = C-M-SPC = mark-sexp
+           ;;
+           ("%k m m a"
+            "%k m m e"
+            "%k m m h"
+            "%k m m b"
+            "%k m m f"
+            "%k m m d"
+            "%k m m u"
+            "%k m m n"
+            "%k m m p"
+            "%k m m k"
+            "%k m m DEL"
+            "%k m m SPC")
+
+           ;; ------------------------------------------------------------
+           ;; Word / higher-level text navigation
+           ;; ------------------------------------------------------------
+           ;;
+           ;; ,mb = M-b = backward-word
+           ;; ,mf = M-f = forward-word
+           ;;
+           ;; ,m{ = M-{ = backward-paragraph
+           ;; ,m} = M-} = forward-paragraph
+           ;;
+           ;; ,m< = M-< = beginning-of-buffer
+           ;; ,m> = M-> = end-of-buffer
+           ;;
+           ("%k m b"
+            "%k m f"
+            "%k m {"
+            "%k m }"
+            "%k m <"
+            "%k m >")
+
+           ;; --------------------------------------------------
+           ;; Search direction
+           ;; --------------------------------------------------
+           ;;
+           ;; ,s = C-s = isearch-forward
+           ;; ,r = C-r = isearch-backward
+           ;;
+           ("%k s"
+            "%k r")
+
+           ))))
 
 ;; ============================================================
 ;; Org Browser

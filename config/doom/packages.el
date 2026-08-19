@@ -93,7 +93,7 @@
 ;;   :recipe (:host github
 ;;            :repo "ichernyshovvv/grid.el"))
 (package! denote)
-
+(package! devil)
 
 
 ;; lightemacs-setup.el
