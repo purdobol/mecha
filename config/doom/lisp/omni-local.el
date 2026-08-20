@@ -177,11 +177,18 @@
 ;; M-x itself is not replaced.
 ;;
 ;; While M-x is active inside the Omni frame, command-execute
-;; captures the selected command and throws it out through the
-;; Omni/Consult recursive-edit stack.
+;; captures the selected command and throws a DISTINCT tagged
+;; value out through the Omni/Consult recursive-edit stack.
 ;;
-;; my/omni-launch catches that command, lets Omni completely
-;; unwind and close, and then executes the selected command.
+;; The tag is important:
+;;
+;;   (:m-x-command COMMAND)
+;;
+;; Normal Omni results are NOT tagged this way, so they are
+;; never accidentally treated as M-x commands.
+;;
+;; my/omni-launch catches the tagged command, lets Omni
+;; completely unwind and close, and then executes the command.
 ;;
 ;; Normal command execution outside M-x is untouched.
 
@@ -192,7 +199,11 @@
            (frame-live-p my/omni-frame)
            (eq (selected-frame) my/omni-frame)
            (commandp command))
-      (throw 'my/omni-command command)
+      ;; IMPORTANT:
+      ;; Tag this value so normal Omni results cannot be
+      ;; mistaken for an M-x command.
+      (throw 'my/omni-command
+             (list :m-x-command command))
     (apply orig-fn command args)))
 
 (defun my/omni--execute-extended-command-advice
@@ -230,7 +241,11 @@
   (setq my/omni-frame
         (my/omni--make-frame width height))
 
-  ;; Holds a command selected through M-x, if any.
+  ;; Holds the tagged M-x escape value, if M-x was used.
+  ;;
+  ;; Normal Omni results may also be returned by FN, but they
+  ;; will NOT have the :m-x-command tag and therefore will not
+  ;; be executed here.
   (let (pending-command)
 
     ;; Everything inside this block runs in the Omni frame.
@@ -250,8 +265,13 @@
 
         ;; Run Omni.
         ;;
-        ;; If M-x selects a command, command-execute throws
-        ;; that command to this catch.
+        ;; Normal Omni results return normally.
+        ;;
+        ;; M-x throws:
+        ;;
+        ;;   (:m-x-command COMMAND)
+        ;;
+        ;; which escapes this catch.
         (unwind-protect
             (setq pending-command
                   (catch 'my/omni-command
@@ -263,20 +283,32 @@
 
           (setq my/omni-frame nil))))
 
-    ;; At this point the entire Omni/Consult/M-x stack has
-    ;; completely unwound.
+    ;; --------------------------------------------------
+    ;; M-x only
+    ;; --------------------------------------------------
     ;;
-    ;; Now execute the selected command in the main frame.
-    (when (commandp pending-command)
-      (let ((main-frame
+    ;; Only a value explicitly tagged :m-x-command gets here.
+    ;;
+    ;; This prevents normal Omni results such as Apps,
+    ;; Projectile, fd, OrgBookmarks, etc. from being treated
+    ;; as Emacs commands.
+    (when (and (consp pending-command)
+               (eq (car pending-command) :m-x-command))
+
+      (let ((command (cadr pending-command))
+            (main-frame
              (my/omni--main-frame)))
 
         ;; Focus the main Emacs frame.
+        ;;
+        ;; This is what allows the window manager to follow
+        ;; Emacs to its workspace in your current setup.
         (when (frame-live-p main-frame)
           (select-frame-set-input-focus main-frame))
 
-        ;; Execute directly in this Emacs process.
-        (call-interactively pending-command)))))
+        ;; Execute the M-x command interactively.
+        (when (commandp command)
+          (call-interactively command))))))
 
 ;; --------------------------------------------------
 ;; Public local launcher
