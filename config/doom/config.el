@@ -557,10 +557,10 @@
   "Run a package manager operation on multiple packages."
   t)
 
+
 ;; ============================================================
 ;; TMR
 ;; ============================================================
-
 
 (use-package! tmr
   :commands (tmr tmr-with-details)
@@ -570,7 +570,16 @@
   (setq tmr-sound-file
         "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"
         tmr-notification-urgency 'normal
-        tmr-description-list 'tmr-description-history))
+        tmr-description-list 'tmr-description-history)
+
+  ;; Custom serial repeating timer:
+  ;; C-c r i
+  (define-key tmr-prefix-map
+              (kbd "i")
+              #'my/tmr-repeat-ack))
+
+(load! "lisp/tmr-setup")
+
 
 ;; ============================================================
 ;; GPTel
