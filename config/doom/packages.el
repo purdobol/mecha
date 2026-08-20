@@ -93,7 +93,14 @@
 ;;   :recipe (:host github
 ;;            :repo "ichernyshovvv/grid.el"))
 (package! denote)
+(package! tmr)
 (package! devil)
+
+(package! jump-char
+  :recipe (:host github :repo "lewang/jump-char"))
+
+(package! surround
+  :recipe (:host github :repo "mkleehammer/surround"))
 
 
 ;; lightemacs-setup.el
