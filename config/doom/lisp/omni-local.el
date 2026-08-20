@@ -1,9 +1,5 @@
 ;;; omni-local.el --- Local Consult-Omni search and floating frame -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2026
-;; Author: [azg@work](mailto:azg@work)
-;; Keywords:
-
 ;;; Commentary:
 ;; Defines the local Omni search experience:
 ;;
@@ -11,6 +7,8 @@
 ;; 2. Defines the sources used by consult-omni-local.
 ;; 3. Provides the native floating-frame UI.
 ;; 4. Exposes my/omni-local-real as the frame-based entry point.
+;; 5. Allows M-x inside the Omni floating frame to launch commands
+;;    after the Omni/Consult recursive edit has completely exited.
 ;;
 ;; Loading of this file is handled externally by the Omni lazy-loader.
 
@@ -19,9 +17,6 @@
 ;; --------------------------------------------------
 ;; fd configuration
 ;; --------------------------------------------------
-;; Local fd search intentionally excludes configuration, cache, application
-;; data, and other directories that are not useful for normal file search.
-;; Knowledge and org are excluded because they have dedicated Omni sources.
 
 (defvar my-consult-omni-fd-command
   (if (executable-find "fdfind")
@@ -51,9 +46,6 @@
 ;; --------------------------------------------------
 ;; Local search sources
 ;; --------------------------------------------------
-;; These are the sources presented by consult-omni-local.
-;; Each source has a dedicated purpose, keeping the local launcher focused
-;; on frequently useful personal and development resources.
 
 (defvar consult-omni-local-sources
   '("calc"
@@ -79,19 +71,43 @@
 ;; --------------------------------------------------
 ;; Omni frame state
 ;; --------------------------------------------------
-;; The frame is created on demand and removed when the search command exits.
 
-(defvar my/omni-frame nil)
-(defvar my/omni-buffer "*omni*")
-(defvar my/omni-current-mode nil)
+(defvar my/omni-frame nil
+  "The current Omni floating frame.")
+
+(defvar my/omni-buffer "*omni*"
+  "Buffer used by the Omni floating frame.")
+
+(defvar my/omni-current-mode nil
+  "Current Omni mode.")
+
+;; --------------------------------------------------
+;; M-x state
+;; --------------------------------------------------
+
+(defvar my/omni--m-x-active nil
+  "Non-nil while M-x is active inside the Omni frame.")
+
+;; --------------------------------------------------
+;; Find main Emacs frame
+;; --------------------------------------------------
+
+(defun my/omni--main-frame ()
+  "Return the normal Emacs frame, excluding the Omni frame."
+  (seq-find
+   (lambda (frame)
+     (and (frame-live-p frame)
+          (not (eq frame my/omni-frame))
+          (not (string= (frame-parameter frame 'name)
+                        "omni"))))
+   (frame-list)))
 
 ;; --------------------------------------------------
 ;; Frame creation
 ;; --------------------------------------------------
-;; Creates the undecorated floating frame used by the local Omni launcher.
-;; Width and height are specified in character units.
 
 (defun my/omni--make-frame (width height)
+  "Create the floating Omni frame."
   (let* ((char-w (frame-char-width))
          (char-h (frame-char-height))
          (pixel-width (* width char-w))
@@ -115,9 +131,9 @@
 ;; --------------------------------------------------
 ;; Header renderer
 ;; --------------------------------------------------
-;; Displays the centered title/subtitle shown above the Consult minibuffer.
 
 (defun my/omni-render-header (title subtitle)
+  "Render the centered Omni header."
   (setq buffer-read-only nil)
   (erase-buffer)
 
@@ -132,7 +148,9 @@
            (max 0
                 (/ (- usable-width (string-width subtitle)) 2))
            ?\s)))
+
     (insert "\n\n\n")
+
     (insert
      padding
      (propertize
@@ -141,6 +159,7 @@
               :height 2.0
               :weight bold))
      "\n")
+
     (insert
      sub-padding
      (propertize
@@ -152,52 +171,125 @@
   (setq buffer-read-only t))
 
 ;; --------------------------------------------------
+;; M-x command interception
+;; --------------------------------------------------
+;;
+;; M-x itself is not replaced.
+;;
+;; While M-x is active inside the Omni frame, command-execute
+;; captures the selected command and throws it out through the
+;; Omni/Consult recursive-edit stack.
+;;
+;; my/omni-launch catches that command, lets Omni completely
+;; unwind and close, and then executes the selected command.
+;;
+;; Normal command execution outside M-x is untouched.
+
+(defun my/omni--command-execute-advice
+    (orig-fn command &rest args)
+  "Capture a command selected by M-x inside the Omni frame."
+  (if (and my/omni--m-x-active
+           (frame-live-p my/omni-frame)
+           (eq (selected-frame) my/omni-frame)
+           (commandp command))
+      (throw 'my/omni-command command)
+    (apply orig-fn command args)))
+
+(defun my/omni--execute-extended-command-advice
+    (orig-fn &rest args)
+  "Mark M-x as active while it runs inside Omni."
+  (if (and (frame-live-p my/omni-frame)
+           (eq (selected-frame) my/omni-frame))
+      (let ((my/omni--m-x-active t))
+        (apply orig-fn args))
+    (apply orig-fn args)))
+
+;; Install the interception advice.
+(advice-add #'execute-extended-command
+            :around
+            #'my/omni--execute-extended-command-advice)
+
+(advice-add #'command-execute
+            :around
+            #'my/omni--command-execute-advice)
+
+;; --------------------------------------------------
 ;; Core frame launcher
 ;; --------------------------------------------------
-;; Creates the floating frame, prepares its buffer, runs the supplied
-;; search function, and cleans up the frame when the search exits.
 
 (defun my/omni-launch (mode width height fn title subtitle)
+  "Launch an Omni search in a floating frame."
   (setq my/omni-current-mode mode)
 
-  ;; Close an existing Omni frame before opening a new one.
+  ;; Close an existing Omni frame.
   (when (frame-live-p my/omni-frame)
     (delete-frame my/omni-frame)
     (setq my/omni-frame nil))
 
+  ;; Create the floating frame.
   (setq my/omni-frame
         (my/omni--make-frame width height))
 
-  (with-selected-frame my/omni-frame
-    (select-frame-set-input-focus my/omni-frame)
+  ;; Holds a command selected through M-x, if any.
+  (let (pending-command)
 
-    (let ((buf (get-buffer-create my/omni-buffer)))
-      (switch-to-buffer buf)
+    ;; Everything inside this block runs in the Omni frame.
+    (with-selected-frame my/omni-frame
+      (select-frame-set-input-focus my/omni-frame)
 
-      ;; Keep the Omni frame visually focused on the search interface.
-      (setq-local mode-line-format nil)
-      (setq-local header-line-format nil)
-      (setq-local cursor-type nil)
+      (let ((buf (get-buffer-create my/omni-buffer)))
+        (switch-to-buffer buf)
 
-      (my/omni-render-header title subtitle)
+        ;; Keep the Omni frame focused on the search interface.
+        (setq-local mode-line-format nil)
+        (setq-local header-line-format nil)
+        (setq-local cursor-type nil)
 
-      ;; Always clean up the floating frame when the search exits.
-      (unwind-protect
-          (funcall fn)
-        (when (frame-live-p my/omni-frame)
-          (delete-frame my/omni-frame))
-        (setq my/omni-frame nil)))))
+        ;; Render header.
+        (my/omni-render-header title subtitle)
+
+        ;; Run Omni.
+        ;;
+        ;; If M-x selects a command, command-execute throws
+        ;; that command to this catch.
+        (unwind-protect
+            (setq pending-command
+                  (catch 'my/omni-command
+                    (funcall fn)))
+
+          ;; Clean up the floating frame.
+          (when (frame-live-p my/omni-frame)
+            (delete-frame my/omni-frame))
+
+          (setq my/omni-frame nil))))
+
+    ;; At this point the entire Omni/Consult/M-x stack has
+    ;; completely unwound.
+    ;;
+    ;; Now execute the selected command in the main frame.
+    (when (commandp pending-command)
+      (let ((main-frame
+             (my/omni--main-frame)))
+
+        ;; Focus the main Emacs frame.
+        (when (frame-live-p main-frame)
+          (select-frame-set-input-focus main-frame))
+
+        ;; Execute directly in this Emacs process.
+        (call-interactively pending-command)))))
 
 ;; --------------------------------------------------
 ;; Public local launcher
 ;; --------------------------------------------------
-;; This is the command called by the lazy-loaded Omni entry point.
 
 (defun my/omni-local-real ()
+  "Launch the local Omni search in a floating frame."
   (interactive)
+
   (my/omni-launch
    'local
-   110 28
+   110
+   28
    #'consult-omni-local
    "omni.local"
    "/ indexing / memory / context / execution /"))
