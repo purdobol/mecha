@@ -557,6 +557,20 @@
   "Run a package manager operation on multiple packages."
   t)
 
+;; ============================================================
+;; TMR
+;; ============================================================
+
+
+(use-package! tmr
+  :commands (tmr tmr-with-details)
+  :bind-keymap
+  ("C-c r" . tmr-prefix-map)
+  :config
+  (setq tmr-sound-file
+        "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"
+        tmr-notification-urgency 'normal
+        tmr-description-list 'tmr-description-history))
 
 ;; ============================================================
 ;; GPTel
@@ -694,6 +708,22 @@
 
            ))))
 
+
+
+
+;; Jump to a character
+(map! "C-;" #'jump-char-forward)
+
+;; Surround
+(use-package! surround
+  :bind-keymap
+  ("C-'" . surround-keymap))
+
+;; Embark
+(map! "C-\\" #'embark-act)
+
+
+
 ;; ============================================================
 ;; Org Browser
 ;; ============================================================
@@ -729,6 +759,5 @@
                 (load! "lisp/lightemacs-setup.el")
               (error
                (message "Lightemacs setup failed: %s" err)))))
-
 
 ;;; config.el ends here
